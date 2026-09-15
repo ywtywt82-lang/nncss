@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 강아지 사이즈 찾기 - Gooby</title>
+<style>
+  :root { --main:#57B6CC; --dark:#2A6A5F; --bg:#f7fafb; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:24px 16px; font-family:-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif; background:var(--bg); color:#222; }
+  .wrap { max-width:720px; margin:0 auto; }
+  h1 { color:var(--dark); margin:0 0 6px; font-size:1.6rem; }
+  p.desc { margin:0 0 20px; color:#555; }
+  .box { background:#fff; border:1px solid #dde8eb; border-radius:12px; padding:20px; margin-bottom:20px; }
+  label { font-weight:bold; display:block; margin-bottom:8px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  input { flex:1; min-width:160px; padding:10px 12px; font-size:1rem; border:1px solid #bcd; border-radius:8px; }
+  button { padding:10px 22px; font-size:1rem; background:var(--main); color:#fff; border:0; border-radius:8px; cursor:pointer; }
+  button:hover { background:var(--dark); }
+  .hint { font-size:.85rem; color:#888; margin-top:8px; }
+  h4 { color:var(--main); margin:20px 0 8px; }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; text-align:center; margin-bottom:8px; }
+  th, td { border:1px solid var(--main); padding:8px; }
+  thead.main th { background:var(--main); color:#fff; }
+  thead.dark th { background:var(--dark); color:#fff; }
+  td.label { background:#f2f2f2; font-weight:bold; }
+  .msg { color:#c0392b; font-weight:bold; }
+  .note { font-size:.85rem; color:#666; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>우리 강아지 사이즈 찾기</h1>
+  <p class="desc">강아지의 가슴둘레를 재어 적절한 사이즈를 추천해줍니다.</p>
+
+  <div class="box">
+    <label for="numberInput">강아지 가슴둘레 (cm)</label>
+    <div class="row">
+      <input type="number" id="numberInput" step="0.1" min="0" placeholder="예: 45">
+      <button id="checkButton" type="button">확인</button>
+    </div>
+    <div class="hint">여러 사이즈가 나올 경우 큰 사이즈를 선택하시는 것이 좋습니다.</div>
+    <div id="result"></div>
+  </div>
+
+  <div class="box">
+    <h4 style="margin-top:0">강아지 무게에 따른 사이즈 분류</h4>
+    <div class="table-wrap">
+    <table>
+      <thead class="main"><tr><th>강아지 무게</th><th>가슴둘레 (cm)</th><th>일반적인 하네스 사이즈</th></tr></thead>
+      <tbody>
+        <tr><td>소형견 (1~4 kg)</td><td>30-40 cm</td><td>XS (Extra Small)</td></tr>
+        <tr><td>소형견 (4~7 kg)</td><td>40-50 cm</td><td>S (Small)</td></tr>
+        <tr><td>중형견 (7~13 kg)</td><td>50-60 cm</td><td>M (Medium)</td></tr>
+        <tr><td>중형견 (13~22 kg)</td><td>60-70 cm</td><td>L (Large)</td></tr>
+        <tr><td>대형견 (22~40 kg)</td><td>70-85 cm</td><td>XL (Extra Large)</td></tr>
+        <tr><td>대형견 (40 kg 이상)</td><td>85 cm 이상</td><td>XXL (Double Extra Large)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note">* 표는 참고치이며, 정확한 Gooby 제품의 사이즈는 가장 넓은 가슴부의 둘레를 측정하신 뒤 위에 입력하시면 참고용으로 추천됩니다.</p>
+  </div>
+</div>
+
+<script>
+  // 제품별 가슴둘레 사이즈표 (원본 페이지 데이터 그대로)
+  var sizeChart = [
+    { name: "이스케이프 프리 이지핏", sizes: [
+      { size: "S",  min: 34.5, max: 41 },
+      { size: "M",  min: 41,   max: 51.5 },
+      { size: "L",  min: 50,   max: 61 },
+      { size: "XL", min: 59.5, max: 73 }
+    ]},
+    { name: "이스케이프 프리 스포츠", sizes: [
+      { size: "S", min: 36,   max: 43 },
+      { size: "M", min: 42.5, max: 54.5 },
+      { size: "L", min: 47,   max: 60 }
+    ]},
+    { name: "스텝인 메모리폼", sizes: [
+      { size: "XS", min: 32, max: 38 },
+      { size: "S",  min: 37, max: 45 },
+      { size: "M",  min: 42, max: 51.5 },
+      { size: "L",  min: 48, max: 59.5 },
+      { size: "XL", min: 56, max: 71 }
+    ]},
+    { name: "심플스텝인", sizes: [
+      { size: "XS", min: 32, max: 38 },
+      { size: "M",  min: 37, max: 45 },   // ※ 원본 그대로: S/M 순서가 뒤바뀐 것으로 보임
+      { size: "S",  min: 42, max: 51.5 },
+      { size: "L",  min: 48, max: 59.5 },
+      { size: "XL", min: 56, max: 71 }
+    ]},
+    { name: "라이트기어Z", sizes: [
+      { size: "S",  min: 34.5, max: 41 },
+      { size: "M",  min: 41,   max: 51.5 },
+      { size: "L",  min: 50,   max: 61 },
+      { size: "XL", min: 59.5, max: 73 }
+    ]},
+    { name: "컨버터블 Z", sizes: [
+      { size: "S",  min: 38, max: 43 },
+      { size: "M",  min: 43, max: 51 },
+      { size: "L",  min: 51, max: 60 },
+      { size: "XL", min: 60, max: 71 }
+    ]}
+  ];
+
+  // 입력값이 min 이상 max 이하인 모든 사이즈를 제품별로 찾음 (경계값은 양쪽 포함)
+  function checkRange() {
+    var inputValue = parseFloat(document.getElementById("numberInput").value);
+    var result = "";
+
+    if (isNaN(inputValue)) {
+      result = "<p class='msg'>올바른 숫자를 입력하세요.</p>";
+    } else {
+      var rows = "";
+      sizeChart.forEach(function (category) {
+        category.sizes.forEach(function (s) {
+          if (inputValue >= s.min && inputValue <= s.max) {
+            rows += "<tr><td class='label'>" + category.name + "</td><td>" + s.size + "</td></tr>";
+          }
+        });
+      });
+
+      if (rows) {
+        result = "<h4>계산된 결과 (" + inputValue + " cm)</h4><div class='table-wrap'><table>" +
+                 "<thead class='dark'><tr><th>제품명</th><th>사이즈</th></tr></thead><tbody>" +
+                 rows + "</tbody></table></div>";
+      } else {
+        result = "<p class='msg'>사이즈가 없습니다.</p>";
+      }
+
+      // 제품별 전체 사이즈표
+      sizeChart.forEach(function (category) {
+        result += "<h4>" + category.name + "</h4><div class='table-wrap'><table>" +
+                  "<thead class='main'><tr><th>사이즈</th><th>최소</th><th>최대</th></tr></thead><tbody>";
+        category.sizes.forEach(function (s) {
+          result += "<tr><td class='label'>" + s.size + "</td><td>" + s.min + "</td><td>" + s.max + "</td></tr>";
+        });
+        result += "</tbody></table></div>";
+      });
+    }
+    document.getElementById("result").innerHTML = result;
+  }
+
+  document.getElementById("checkButton").addEventListener("click", checkRange);
+  document.getElementById("numberInput").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") checkRange();
+  });
+</script>
+</body>
+</html>
